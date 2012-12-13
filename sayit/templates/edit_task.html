@@ -1,0 +1,17 @@
+<!-- Modal -->
+<div id="editTaskDialog" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <form action="/task/edit" method="post">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h3 id="myModalLabel">Edit Task</h3>
+        </div>
+        <div class="modal-body">
+            <input type="text" name="title" id="new-task-text" placeholder="Task text">
+            <input name="task_id" id="task-timestamp" type="hidden">
+        </div>
+        <div class="modal-footer">
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+            <button class="btn btn-primary" type="submit">Edit Task</button>
+        </div>
+    </form>
+</div>

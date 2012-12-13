@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block title %}Sayit - Weekly Tasks{% endblock %}
+{% block body %}
+    {% for week, tasks in week_tasks.iteritems() %}
+        <div class="hero-unit">
+            <div class="row-fluid" id="day-row" value="{{day}}">
+                <div class="span12">
+                    <h3>{{week}} Week</h3>
+                    {% for task in tasks %}
+                        <div class="row-fluid">
+                            <div class="span11">
+                                <ul class="breadcrumb" id="{{task.timestamp}}_title">{{task.title}}</ul>
+                            </div>
+                            <div class="span1">
+                                <ul class="breadcrumb">
+                                    <div class="btn-toolbar">
+                                      <div class="btn-group">
+                                        <a class="btn" id="editTask" value="{{task.timestamp}}" href="#"><i class="icon-edit"></i></a>
+                                        <a class="btn" id="deleteTask" value="{{task.timestamp}}" href="#"><i class="icon-trash"></i></a>
+                                      </div>
+                                    </div>
+                                </ul>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}
+{% block script %}
+    <script>activateMenuSection('weekly-tasks');</script>
+{% endblock %}

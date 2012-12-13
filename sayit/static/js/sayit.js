@@ -18,6 +18,36 @@ $(document).ready(function() {
         })
         .error(function() { $(".alert").alert("Unable to delete the task");})
     });
+
+    // Pick all the task breadcrumbs and set the completed with line-through
+    $('ul').filter(function() {
+        return this.id.match('_title');
+    }).each(function(){
+        completed = $(this).attr("value");
+        if (completed == "True"){
+            $(this).css("text-decoration","line-through");
+        }
+    })
+
+    // Change task status
+    $('#task-row').live('click', function (){
+        console.log("status");
+        timestamp = $(this).children().attr("id").replace('_title', '');
+        status = $(this).children().attr("value");
+        console.log(status);
+        if (status == "False"){
+            status = "True";
+        } else {
+            status = "False";
+        }
+        console.log(status);
+        $.post("/task/status", {task_id: timestamp, status: status},
+            function() {
+                $(".alert").alert("Task status changed successfully");
+                location.reload();
+        })
+        .error(function() { $(".alert").alert("Unable to delete the task");})
+    });
 });
 
 function activateMenuSection(section){

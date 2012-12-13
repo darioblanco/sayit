@@ -3,6 +3,16 @@
   background-color: #ffffff;
 }
 
+.breadcrumb:hover {
+  background-color: #feffef;
+  text-decoration: line-through;
+  cursor: pointer;
+}
+
+.completed {
+  text-decoration: line-through;
+}
+
 .navbar {
   margin-bottom: 10px;
 }

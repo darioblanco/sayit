@@ -8,10 +8,10 @@
                     <h3>{{week}} Week</h3>
                     {% for task in tasks %}
                         <div class="row-fluid">
-                            <div class="span11">
-                                <ul class="breadcrumb" id="{{task.timestamp}}_title">{{task.title}}</ul>
+                            <div class="span11" id="task-row">
+                                <ul class="breadcrumb" id="{{task.timestamp}}_title" value="{{task.completed}}">{{task.title}}</ul>
                             </div>
-                            <div class="span1">
+                            <div class="span1 hidden-tablet hidden-phone">
                                 <ul class="breadcrumb">
                                     <div class="btn-toolbar">
                                       <div class="btn-group">

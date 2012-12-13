@@ -1,12 +1,12 @@
 {% extends "layout.html" %}
-{% block title %}Sayit - Daily Tasks{% endblock %}
+{% block title %}Sayit - Uncompleted Tasks{% endblock %}
 {% block body %}
-    {% for day, tasks in day_tasks.iteritems() %}
+    {% if uncompleted_tasks %}
         <div class="hero-unit">
             <div class="row-fluid" id="day-row" value="{{day}}">
                 <div class="span12">
-                    <h3>{{day|datefromstr}}</h3>
-                    {% for task in tasks %}
+                    <h3>Uncompleted Tasks</h3>
+                    {% for task in uncompleted_tasks %}
                         <div class="row-fluid">
                             <div class="span11" id="task-row">
                                 <ul class="breadcrumb" id="{{task.timestamp}}_title" value="{{task.completed}}">{{task.title}}</ul>
@@ -26,8 +26,8 @@
                 </div>
             </div>
         </div>
-    {% endfor %}
+    {% endif %}
 {% endblock %}
 {% block script %}
-    <script>activateMenuSection('daily-tasks');</script>
+    <script>activateMenuSection('uncompleted-tasks');</script>
 {% endblock %}

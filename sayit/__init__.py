@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 from flask import Flask
+from flask.ext.login import LoginManager
 from logbook import MonitoringFileHandler, NullHandler
 
 from sayit.settings import DEBUG, LOG_FILE, SECRET_KEY
@@ -18,5 +19,11 @@ log_handler.push_application()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
+
+login_manager = LoginManager()
+login_manager.setup_app(app)
+login_manager.login_view = "login"
+login_manager.login_message = u"Please log in to access this page."
+login_manager.refresh_view = "reauth"
 
 import views

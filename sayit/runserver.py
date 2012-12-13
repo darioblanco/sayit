@@ -15,3 +15,4 @@ if __name__ == '__main__':
                         help="Set debug mode")
     args_dict = vars(parser.parse_args())
     app.run(host=args_dict['host'], debug=args_dict['debug'])
+

@@ -1,0 +1,34 @@
+.breadcrumb {
+  margin: 0 0 5px;
+  background-color: #ffffff;
+}
+
+.navbar {
+  margin-bottom: 10px;
+}
+
+.hero-unit {
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.hero-unit h3 {
+  margin-left: 15px;
+  margin-bottom: 15px;
+  font-size: 25px;
+  line-height: 1;
+  letter-spacing: -1px;
+  color: inherit;
+}
+
+.btn-toolbar {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  font-size: 0;
+}
+
+input,
+textarea,
+.uneditable-input {
+  width: 90%;
+}

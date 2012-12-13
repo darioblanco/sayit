@@ -51,7 +51,7 @@ class Task(object):
             'day': dt.strftime("%d/%m/%Y"),
             'week': "{0}/{1}".format(ic[1], ic[0]),
             'title': title,
-            'completed': False
+            'completed': completed
         }
 
     def save(self):
@@ -60,22 +60,29 @@ class Task(object):
                                             self.username),
                  self.data)
         # List of tasks ids per day and user
-        rd.lpush('taskday:{0}:user:{1}'.format(self.data['day'],
-                                               self.username),
+        rd.lpush('tasksday:{0}:user:{1}'.format(self.data['day'],
+                                                self.username),
                  self.timestamp)
         # List of tasks ids per week and user
-        rd.lpush('taskweek:{0}:user:{1}'.format(self.data['week'],
-                                                self.username),
+        rd.lpush('tasksweek:{0}:user:{1}'.format(self.data['week'],
+                                                 self.username),
+                 self.timestamp)
+        # List of completed or uncompleted tasks
+        rd.lpush('tasks.completed:{0}:user:{1}'.format(self.data['completed'],
+                                                       self.username),
                  self.timestamp)
 
     @classmethod
     def remove(cls, username, task_id):
         key = 'task:{0}:user:{1}'.format(task_id, username)
         data = rd.hgetall(key)
-        rd.lrem('taskday:{0}:user:{1}'.format(data['day'], username), 1,
+        rd.lrem('tasksday:{0}:user:{1}'.format(data['day'], username), 1,
                 task_id)
-        rd.lrem('taskweek:{0}:user:{1}'.format(data['week'], username), 1,
+        rd.lrem('tasksweek:{0}:user:{1}'.format(data['week'], username), 1,
                 task_id)
+        rd.lrem('tasks.completed:{0}:user:{1}'.format(data['completed'],
+                                                      username),
+                1, task_id)
         rd.delete(key)
 
     @classmethod
@@ -84,15 +91,27 @@ class Task(object):
 
     @classmethod
     def edit_status(cls, username, task_id, completed):
-        rd.hset('task:{0}:user:{1}'.format(task_id, username),
-                'completed', completed)
+        key = 'task:{0}:user:{1}'.format(task_id, username)
+        prev_completed = rd.hget(key, 'completed') in ['True', 'true', 'TRUE']
+        # If the new state is different
+        if not (prev_completed == completed):
+            # Remove from the previous state list
+            rd.lrem('tasks.completed:{0}:user:{1}'.format(prev_completed,
+                                                          username),
+                    1, task_id)
+            # Add to the new state list
+            rd.lpush('tasks.completed:{0}:user:{1}'.format(completed,
+                                                           username),
+                     task_id)
+            rd.hset('task:{0}:user:{1}'.format(task_id, username),
+                    'completed', completed)
 
     @classmethod
     def get_tasks_by_week(cls, username):
         """Returns a list of weeks with tasks for the specified user"""
-        week_tasks = {}  # {week: [{taskid: task_data}]}
+        week_tasks = {}
 
-        key_weeks = rd.keys('taskweek:*:user:{0}'.format(username))
+        key_weeks = rd.keys('tasksweek:*:user:{0}'.format(username))
         for key_week in key_weeks:
             task_ids = rd.lrange(key_week, 0, -1)  # Get task ids by week
             # Get task data
@@ -111,12 +130,12 @@ class Task(object):
     @classmethod
     def get_tasks_by_day(cls, username):
         """Returns a list of days with tasks for the specified user"""
-        day_tasks = {}  # {day: [{taskid: task_data}]}
+        day_tasks = {}
 
-        key_days = rd.keys('taskday:*:user:{0}'.format(username))
+        key_days = rd.keys('tasksday:*:user:{0}'.format(username))
         for key_day in key_days:
             day = key_day.rstrip('user:{0}'.format(username))
-            day = day.lstrip('taskday:')
+            day = day.lstrip('tasksday:')
             task_ids = rd.lrange(key_day, 0, -1)  # Get task ids by day
             day_tasks[day] = []
             for task_id in task_ids:
@@ -126,3 +145,18 @@ class Task(object):
                 day_tasks[day].append(task_data)
 
         return day_tasks
+
+    @classmethod
+    def get_tasks_by_status(cls, username, status):
+        """Returns a list of completed tasks for the specified user"""
+        tasks = []
+
+        task_ids = rd.lrange(
+            "tasks.completed:{0}:user:{1}".format(status, username), 0, -1)
+        for task_id in task_ids:
+            task_data = rd.hgetall("task:{0}:user:{1}".format(task_id,
+                                                              username))
+            task_data['timestamp'] = task_id
+            tasks.append(task_data)
+
+        return tasks

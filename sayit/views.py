@@ -28,29 +28,53 @@ def week_tasks():
     )
 
 
+@app.route('/completed')
+# @login_required
+def completed_tasks():
+    return render_template(
+        'tasks_completed.html',
+        completed_tasks=Task.get_tasks_by_status(settings.USERNAME, True)
+    )
+
+
+@app.route('/uncompleted')
+# @login_required
+def uncompleted_tasks():
+    return render_template(
+        'tasks_uncompleted.html',
+        uncompleted_tasks=Task.get_tasks_by_status(settings.USERNAME, False)
+    )
+
+
 @app.route('/task/create', methods=["POST"])
 # @login_required
 def create_task():
-    task = request.form['task']
-    t = Task(settings.USERNAME, task)
+    t = Task(settings.USERNAME, request.form['task'])
     t.save()
-    return redirect('/')
-
-
-@app.route('/task/edit', methods=["POST"])
-# @login_required
-def edit_task_title():
-    task_id = request.form['task_id']
-    title = request.form['title']
-    Task.edit_title(settings.USERNAME, task_id, title)
     return redirect('/')
 
 
 @app.route('/task/delete', methods=["POST"])
 # @login_required
 def delete_task():
-    task_id = request.form['task_id']
-    Task.remove(settings.USERNAME, task_id)
+    Task.remove(settings.USERNAME, request.form['task_id'])
+    return redirect('/')
+
+
+@app.route('/task/title', methods=["POST"])
+# @login_required
+def edit_task_title():
+    Task.edit_title(settings.USERNAME,
+                    request.form['task_id'],
+                    request.form['title'])
+    return redirect('/')
+
+
+@app.route('/task/status', methods=["POST"])
+# @login_required
+def edit_task_status():
+    status = request.form['status'] in ['True', 'true', 'TRUE']
+    Task.edit_status(settings.USERNAME, request.form['task_id'], status)
     return redirect('/')
 
 

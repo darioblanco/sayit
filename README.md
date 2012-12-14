@@ -3,7 +3,7 @@ sayit
 
 Task manager for your daily stand ups.
 
-## Requirements
+### Requirements
 Python 2.6+
 
 ### Python dependencies

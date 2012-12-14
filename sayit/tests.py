@@ -4,7 +4,7 @@ import redis
 from logbook import TestHandler
 from pbkdf2 import crypt
 
-from sayit.database import User
+from sayit.database import Task, User
 from sayit.settings import REDIS, SECRET_KEY
 
 USER = {
@@ -12,11 +12,9 @@ USER = {
     'password': 'password1'
 }
 
-TASK_FIXTURES = {
-    'user1': [
-        'Dummy1', 'Dummy2', 'Dummy3'
-    ]
-}
+TASK_FIXTURES = [
+    'Dummy1', 'Dummy2', 'Dummy3', 'Dummy4'
+]
 
 
 class BaseTestCase(unittest.TestCase):
@@ -62,4 +60,8 @@ class UserTestCase(BaseTestCase):
 
 
 class TaskTestCase(BaseTestCase):
-    pass
+    def setUp(self):
+        super(TaskTestCase, self).setUp()
+        for task in TASK_FIXTURES:
+            t = Task(USER['username'], task)
+            t.save()

@@ -3,8 +3,9 @@ import time
 from datetime import datetime
 
 import redis
+from pbkdf2 import crypt
 
-from sayit.settings import REDIS
+from sayit.settings import REDIS, SECRET_KEY
 
 rd = redis.StrictRedis(REDIS['host'],
                        port=REDIS['port'],
@@ -16,7 +17,7 @@ class User(object):
     def __init__(self, username, password, enabled=True):
         self.username = username
         self.user_data = {
-            'password': password,
+            'password': crypt(password, SECRET_KEY),
             'enabled': enabled
         }
 
@@ -39,6 +40,11 @@ class User(object):
         if user_data:
             user_data['username'] = username
         return user_data
+
+    @classmethod
+    def check_user_password(cls, username, password):
+        return (rd.hget('user:{0}'.format(username), 'password') ==
+                crypt(password, SECRET_KEY))
 
 
 class Task(object):

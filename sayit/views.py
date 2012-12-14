@@ -2,12 +2,11 @@
 from datetime import datetime
 
 from flask import redirect, render_template, request
-from flask.ext.login import (login_required, login_user,
-                             logout_user, UserMixin)
+from flask.ext.login import (current_user, login_required,
+                             login_user, logout_user, UserMixin)
 
 from sayit import app
 from sayit.database import User, Task
-from sayit import settings
 
 
 @app.route('/')
@@ -15,7 +14,7 @@ from sayit import settings
 def day_tasks():
     return render_template(
         'tasks_day.html',
-        day_tasks=Task.get_tasks_by_day(settings.USERNAME)
+        day_tasks=Task.get_tasks_by_day(current_user.get_id())
     )
 
 
@@ -24,7 +23,7 @@ def day_tasks():
 def week_tasks():
     return render_template(
         'tasks_week.html',
-        week_tasks=Task.get_tasks_by_week(settings.USERNAME)
+        week_tasks=Task.get_tasks_by_week(current_user.get_id())
     )
 
 
@@ -33,7 +32,7 @@ def week_tasks():
 def completed_tasks():
     return render_template(
         'tasks_completed.html',
-        completed_tasks=Task.get_tasks_by_status(settings.USERNAME, True)
+        completed_tasks=Task.get_tasks_by_status(current_user.get_id(), True)
     )
 
 
@@ -42,14 +41,15 @@ def completed_tasks():
 def uncompleted_tasks():
     return render_template(
         'tasks_uncompleted.html',
-        uncompleted_tasks=Task.get_tasks_by_status(settings.USERNAME, False)
+        uncompleted_tasks=Task.get_tasks_by_status(current_user.get_id(),
+                                                   False)
     )
 
 
 @app.route('/task/create', methods=["POST"])
 @login_required
 def create_task():
-    t = Task(settings.USERNAME, request.form['task'])
+    t = Task(current_user.get_id(), request.form['task'])
     t.save()
     return redirect('/')
 
@@ -57,14 +57,14 @@ def create_task():
 @app.route('/task/delete', methods=["POST"])
 @login_required
 def delete_task():
-    Task.remove(settings.USERNAME, request.form['task_id'])
+    Task.remove(current_user.get_id(), request.form['task_id'])
     return redirect('/')
 
 
 @app.route('/task/title', methods=["POST"])
 @login_required
 def edit_task_title():
-    Task.edit_title(settings.USERNAME,
+    Task.edit_title(current_user.get_id(),
                     request.form['task_id'],
                     request.form['title'])
     return redirect('/')
@@ -74,8 +74,24 @@ def edit_task_title():
 @login_required
 def edit_task_status():
     status = request.form['status'] in ['True', 'true', 'TRUE']
-    Task.edit_status(settings.USERNAME, request.form['task_id'], status)
+    Task.edit_status(current_user.get_id(), request.form['task_id'], status)
     return redirect('/')
+
+
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    error = None
+    next = request.args.get('next')
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        if not User.get(username):
+            u = User(username, password)
+            u.save()
+            return redirect('/')
+        else:
+            error = "The user already exists"
+    return render_template('signup.html', login=True, next=next, error=error)
 
 
 @app.route("/login", methods=["GET", "POST"])

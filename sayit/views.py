@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 from datetime import datetime
 
-from flask import flash, redirect, render_template, request, url_for
+from flask import redirect, render_template, request
 from flask.ext.login import (login_required, login_user,
                              logout_user, UserMixin)
 
@@ -11,7 +11,7 @@ from sayit import settings
 
 
 @app.route('/')
-# @login_required
+@login_required
 def day_tasks():
     return render_template(
         'tasks_day.html',
@@ -20,7 +20,7 @@ def day_tasks():
 
 
 @app.route('/week')
-# @login_required
+@login_required
 def week_tasks():
     return render_template(
         'tasks_week.html',
@@ -29,7 +29,7 @@ def week_tasks():
 
 
 @app.route('/completed')
-# @login_required
+@login_required
 def completed_tasks():
     return render_template(
         'tasks_completed.html',
@@ -38,7 +38,7 @@ def completed_tasks():
 
 
 @app.route('/uncompleted')
-# @login_required
+@login_required
 def uncompleted_tasks():
     return render_template(
         'tasks_uncompleted.html',
@@ -47,7 +47,7 @@ def uncompleted_tasks():
 
 
 @app.route('/task/create', methods=["POST"])
-# @login_required
+@login_required
 def create_task():
     t = Task(settings.USERNAME, request.form['task'])
     t.save()
@@ -55,14 +55,14 @@ def create_task():
 
 
 @app.route('/task/delete', methods=["POST"])
-# @login_required
+@login_required
 def delete_task():
     Task.remove(settings.USERNAME, request.form['task_id'])
     return redirect('/')
 
 
 @app.route('/task/title', methods=["POST"])
-# @login_required
+@login_required
 def edit_task_title():
     Task.edit_title(settings.USERNAME,
                     request.form['task_id'],
@@ -71,7 +71,7 @@ def edit_task_title():
 
 
 @app.route('/task/status', methods=["POST"])
-# @login_required
+@login_required
 def edit_task_status():
     status = request.form['status'] in ['True', 'true', 'TRUE']
     Task.edit_status(settings.USERNAME, request.form['task_id'], status)
@@ -84,11 +84,15 @@ def login():
     next = request.args.get('next')
     if request.method == 'POST':
         username = request.form['username']
-        # password = request.form['password']
-        if login_user(username):
-            flash("You have logged in")
-            return redirect(next or url_for('index', error=error))
-    error = "Login failed"
+        password = request.form['password']
+        remember = request.form.get('remember', False)
+        if User.check_user_password(username, password):
+            # Right password
+            user = AuthUser(username)
+            if login_user(user, remember=remember):
+                # Logged in correctly
+                return redirect('/')
+        error = "Username or password incorrect"
     return render_template('login.html', login=True, next=next, error=error)
 
 
@@ -97,7 +101,6 @@ def login():
 def logout():
     next = request.args.get('next', '/')
     logout_user()
-    flash('You are logged out')
     return redirect(next)
 
 
@@ -115,6 +118,9 @@ class AuthUser(UserMixin):
     def __init__(self, username, active=True):
         self.username = username
         self.active = active
+
+    def get_id(self):
+        return self.username
 
     def is_active(self):
         return self.active

@@ -27,16 +27,13 @@ class User(object):
 
     @classmethod
     def remove(cls, username):
-        """Removes the specificed user"""
+        """Removes the specified user"""
         rd.delete('user:{0}'.format(username))
 
     @classmethod
     def get(cls, username):
         """Returns user and password"""
-        try:
-            user_data = rd.hgetall('user:{0}'.format(username))
-        except redis.RedisError:
-            user_data = None
+        user_data = rd.hgetall('user:{0}'.format(username))
         if user_data:
             user_data['username'] = username
         return user_data

@@ -63,29 +63,29 @@ class Task(object):
                                             self.username),
                  self.data)
         # List of tasks ids per day and user
-        rd.lpush('tasksday:{0}:user:{1}'.format(self.data['day'],
-                                                self.username),
+        rd.sadd('tasksday:{0}:user:{1}'.format(self.data['day'],
+                                               self.username),
                  self.timestamp)
         # List of tasks ids per week and user
-        rd.lpush('tasksweek:{0}:user:{1}'.format(self.data['week'],
-                                                 self.username),
+        rd.sadd('tasksweek:{0}:user:{1}'.format(self.data['week'],
+                                                self.username),
                  self.timestamp)
         # List of completed or uncompleted tasks
-        rd.lpush('tasks.completed:{0}:user:{1}'.format(self.data['completed'],
-                                                       self.username),
+        rd.sadd('tasks.completed:{0}:user:{1}'.format(self.data['completed'],
+                                                      self.username),
                  self.timestamp)
 
     @classmethod
     def remove(cls, username, task_id):
         key = 'task:{0}:user:{1}'.format(task_id, username)
         data = rd.hgetall(key)
-        rd.lrem('tasksday:{0}:user:{1}'.format(data['day'], username), 1,
+        rd.srem('tasksday:{0}:user:{1}'.format(data['day'], username),
                 task_id)
-        rd.lrem('tasksweek:{0}:user:{1}'.format(data['week'], username), 1,
+        rd.srem('tasksweek:{0}:user:{1}'.format(data['week'], username),
                 task_id)
-        rd.lrem('tasks.completed:{0}:user:{1}'.format(data['completed'],
+        rd.srem('tasks.completed:{0}:user:{1}'.format(data['completed'],
                                                       username),
-                1, task_id)
+                task_id)
         rd.delete(key)
 
     @classmethod
@@ -99,11 +99,11 @@ class Task(object):
         # If the new state is different
         if not (prev_completed == completed):
             # Remove from the previous state list
-            rd.lrem('tasks.completed:{0}:user:{1}'.format(prev_completed,
+            rd.srem('tasks.completed:{0}:user:{1}'.format(prev_completed,
                                                           username),
                     1, task_id)
             # Add to the new state list
-            rd.lpush('tasks.completed:{0}:user:{1}'.format(completed,
+            rd.sadd('tasks.completed:{0}:user:{1}'.format(completed,
                                                            username),
                      task_id)
             rd.hset('task:{0}:user:{1}'.format(task_id, username),
@@ -116,7 +116,7 @@ class Task(object):
 
         key_weeks = rd.keys('tasksweek:*:user:{0}'.format(username))
         for key_week in key_weeks:
-            task_ids = rd.lrange(key_week, 0, -1)  # Get task ids by week
+            task_ids = rd.smembers(key_week)  # Get task ids by week
             # Get task data
             week_task_list = []
             for task_id in task_ids:
@@ -139,7 +139,7 @@ class Task(object):
         for key_day in key_days:
             day = key_day.rstrip('user:{0}'.format(username))
             day = day.lstrip('tasksday:')
-            task_ids = rd.lrange(key_day, 0, -1)  # Get task ids by day
+            task_ids = rd.smembers(key_day)  # Get task ids by day
             day_tasks[day] = []
             for task_id in task_ids:
                 task_data = rd.hgetall("task:{0}:user:{1}".format(task_id,
@@ -154,8 +154,8 @@ class Task(object):
         """Returns a list of completed tasks for the specified user"""
         tasks = []
 
-        task_ids = rd.lrange(
-            "tasks.completed:{0}:user:{1}".format(status, username), 0, -1)
+        task_ids = rd.smembers(
+            "tasks.completed:{0}:user:{1}".format(status, username))
         for task_id in task_ids:
             task_data = rd.hgetall("task:{0}:user:{1}".format(task_id,
                                                               username))

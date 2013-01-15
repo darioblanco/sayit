@@ -1,6 +1,7 @@
 argparse
 flask
 flask-login
+gunicorn
 logbook
 pbkdf2
 redis

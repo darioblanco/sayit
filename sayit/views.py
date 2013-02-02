@@ -12,18 +12,23 @@ from sayit.database import User, Task
 @app.route('/')
 @login_required
 def day_tasks():
+    day_tasks = {}
+    tasks = Task.get_tasks(current_user.get_id())
+    for task in tasks:
+        day_tasks.setdefault(task['timestamp'], []).append(task)
     return render_template(
         'tasks_day.html',
-        day_tasks=Task.get_tasks_by_day(current_user.get_id())
+        day_tasks=day_tasks
     )
 
 
 @app.route('/week')
 @login_required
 def week_tasks():
+    week_tasks = Task.get_tasks(current_user.get_id())
     return render_template(
         'tasks_week.html',
-        week_tasks=Task.get_tasks_by_week(current_user.get_id())
+        week_tasks=week_tasks
     )
 
 
@@ -32,7 +37,8 @@ def week_tasks():
 def completed_tasks():
     return render_template(
         'tasks_completed.html',
-        completed_tasks=Task.get_tasks_by_status(current_user.get_id(), True)
+        completed_tasks=Task.get_tasks(current_user.get_id(),
+                                       status='completed')
     )
 
 
@@ -40,42 +46,51 @@ def completed_tasks():
 @login_required
 def uncompleted_tasks():
     return render_template(
-        'tasks_uncompleted.html',
-        uncompleted_tasks=Task.get_tasks_by_status(current_user.get_id(),
-                                                   False)
+        'tasks_completed.html',
+        uncompleted_tasks=Task.get_tasks(current_user.get_id(),
+                                         status='uncompleted')
     )
 
 
 @app.route('/task/create', methods=["POST"])
 @login_required
 def create_task():
+    next = request.args.get('next', '/')
     t = Task(current_user.get_id(), request.form['task'])
     t.save()
-    return redirect('/')
+    return redirect(next)
 
 
 @app.route('/task/delete', methods=["POST"])
 @login_required
 def delete_task():
-    Task.remove(current_user.get_id(), request.form['task_id'])
-    return redirect('/')
+    next = request.args.get('next', '/')
+    Task.remove(request.form['task_id'])
+    return redirect(next)
 
 
 @app.route('/task/title', methods=["POST"])
 @login_required
 def edit_task_title():
-    Task.edit_title(current_user.get_id(),
+    next = request.args.get('next', '/')
+    Task.edit_field(current_user.get_id(),
                     request.form['task_id'],
+                    'title',
                     request.form['title'])
-    return redirect('/')
+    return redirect(next)
 
 
 @app.route('/task/status', methods=["POST"])
 @login_required
 def edit_task_status():
-    status = request.form['status'] in ['True', 'true', 'TRUE']
-    Task.edit_status(current_user.get_id(), request.form['task_id'], status)
-    return redirect('/')
+    next = request.args.get('next', '/')
+    if request.form['status'] in ['True', 'true', 'TRUE']:
+        status = 'completed'
+    else:
+        status = 'uncompleted'
+    Task.edit_field(current_user.get_id(), request.form['task_id'],
+                    'status', status)
+    return redirect(next)
 
 
 @app.route("/signup", methods=["GET", "POST"])
@@ -115,7 +130,7 @@ def login():
 @app.route("/logout")
 @login_required
 def logout():
-    next = request.args.get('next', '/')
+    next = request.args.get('next', '/login')
     logout_user()
     return redirect(next)
 
@@ -149,10 +164,9 @@ class AuthUser(UserMixin):
 
 
 @app.template_filter()
-def datefromstr(value):
+def datefromstr(timestamp):
     try:
-        str_date = datetime.strptime(value, '%d/%m/%Y').strftime(
+        return datetime.fromtimestamp(float(timestamp)).strftime(
             '%a, %d. %b %Y')
     except ValueError:
-        str_date = value
-    return str_date
+        return ''

@@ -72,7 +72,7 @@ class TaskTestCase(BaseTestCase):
     def test_create_task(self):
         """Should check the task creation"""
         tasks = self.rd.keys("task:*")
-        self.assertEqual(len(tasks), 4)
+        self.assertEqual(len(tasks), len(TASK_FIXTURES))
         for task_id in tasks:
             task_data = self.rd.hgetall(task_id)
             self.assertTrue("Dummy" in task_data['title'])
@@ -84,7 +84,7 @@ class TaskTestCase(BaseTestCase):
         task_redis_id = self.rd.keys("task:*")[0]
         Task.remove(task_redis_id.replace('task:', ''))
         tasks = self.rd.keys("task:*")
-        self.assertEqual(len(tasks), 3)
+        self.assertEqual(len(tasks), len(TASK_FIXTURES) - 1)
         self.assertFalse(self.rd.keys(task_redis_id))
 
     def test_edit_field(self):
@@ -99,3 +99,11 @@ class TaskTestCase(BaseTestCase):
         self.assertNotEqual(old_task_data['status'], 'completed')
         self.assertEqual('New title', new_task_data['title'])
         self.assertEqual('completed', new_task_data['status'])
+
+    def test_get_all_tasks(self):
+        """Should get all the tasks for the given username"""
+        tasks = Task.get_tasks(USER['username'])
+        self.assertEqual(len(tasks), len(TASK_FIXTURES))
+        for task in tasks:
+            self.assertTrue(task['title'] in TASK_FIXTURES)
+            self.assertEqual(task['status'], 'uncompleted')

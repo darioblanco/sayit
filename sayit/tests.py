@@ -43,6 +43,7 @@ class UserTestCase(BaseTestCase):
         u.save()
 
     def test_create_user(self):
+        """Should create a user with the correct data"""
         expected_user_data = {
             'username': USER['username'],
             'password': crypt(USER['password'], SECRET_KEY),
@@ -51,10 +52,12 @@ class UserTestCase(BaseTestCase):
         self.assertEqual(User.get(USER['username']), expected_user_data)
 
     def test_check_password(self):
+        """Should check that the user credentials are valid"""
         self.assertTrue(User.check_user_password(USER['username'],
                                                  USER['password']))
 
     def test_delete_user(self):
+        """Should remove a user when a username is given"""
         User.remove(USER['username'])
         self.assertEquals(User.get(USER['username']), {})
 
@@ -65,3 +68,34 @@ class TaskTestCase(BaseTestCase):
         for task in TASK_FIXTURES:
             t = Task(USER['username'], task)
             t.save()
+
+    def test_create_task(self):
+        """Should check the task creation"""
+        tasks = self.rd.keys("task:*")
+        self.assertEqual(len(tasks), 4)
+        for task_id in tasks:
+            task_data = self.rd.hgetall(task_id)
+            self.assertTrue("Dummy" in task_data['title'])
+            self.assertEqual(task_data['status'], 'uncompleted')
+            self.assertEqual(task_data['username'], USER['username'])
+
+    def test_remove_task(self):
+        """Should remove and specific task"""
+        task_redis_id = self.rd.keys("task:*")[0]
+        Task.remove(task_redis_id.replace('task:', ''))
+        tasks = self.rd.keys("task:*")
+        self.assertEqual(len(tasks), 3)
+        self.assertFalse(self.rd.keys(task_redis_id))
+
+    def test_edit_field(self):
+        """Should change the value of a specific field"""
+        task_redis_id = self.rd.keys("task:*")[0]
+        old_task_data = self.rd.hgetall(task_redis_id)
+        task_id = task_redis_id.replace('task:', '')
+        Task.edit_field(task_id, 'title', 'New title')
+        Task.edit_field(task_id, 'status', 'completed')
+        new_task_data = self.rd.hgetall(task_redis_id)
+        self.assertNotEqual(old_task_data['title'], 'New title')
+        self.assertNotEqual(old_task_data['status'], 'completed')
+        self.assertEqual('New title', new_task_data['title'])
+        self.assertEqual('completed', new_task_data['status'])

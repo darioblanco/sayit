@@ -85,11 +85,11 @@ class Task(object):
                 # Remove from the previous state list
                 tasks_key = 'tasks.{0}:{1}'.format(data['status'],
                                                    data['username'])
-                score = rd.zscore(tasks_key)
+                score = rd.zscore(tasks_key, task_id)
                 rd.zrem(tasks_key, task_id)
                 # Add to the new state list
-                rd.add('tasks.{0}:{1}'.format(field_value, data['username']),
-                       score, task_id)
+                rd.zadd('tasks.{0}:{1}'.format(field_value, data['username']),
+                        score, task_id)
         rd.hset(task_key, field_name, field_value)
 
     @classmethod
